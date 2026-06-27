@@ -55,7 +55,14 @@
   /* ===== HERO ===== */
   .hero{position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden}
   .hero .bg{position:absolute;inset:0;z-index:0}
-  .hero .bg img{width:100%;height:100%;object-fit:cover}
+  .hero .bg img{width:100%;height:100%;object-fit:cover;
+    animation:kenburns 24s ease-in-out infinite alternate;transform-origin:center}
+  @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.09)}}
+  .hero canvas.burbujas{position:absolute;inset:0;z-index:1;pointer-events:none}
+  @media(prefers-reduced-motion:reduce){
+    .hero .bg img{animation:none}
+    .hero canvas.burbujas{display:none}
+  }
   .hero .bg::after{content:"";position:absolute;inset:0;
     background:linear-gradient(180deg,rgba(11,26,35,.72) 0%,rgba(11,26,35,.55) 40%,rgba(11,26,35,.92) 100%)}
   .hero .wrap{position:relative;z-index:2;padding:70px 20px;text-align:center}
@@ -188,6 +195,7 @@
 <!-- ===================== HERO ===================== -->
 <header class="hero">
   <div class="bg"><img src="img/hero.jpg" alt="Ceviche de camarón fresco"></div>
+  <canvas class="burbujas" aria-hidden="true"></canvas>
   <div class="wrap">
     <span class="eyebrow dual">En el Entronque · Chihuahua</span>
     <h1>Mariscos El Victor's<span class="sm">Frescos del mar al desierto</span></h1>
@@ -349,6 +357,33 @@
 </a>
 
 <script>
+/* Burbujas suaves en el hero */
+(function(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var cv=document.querySelector('.hero canvas.burbujas');if(!cv)return;
+  var ctx=cv.getContext('2d'),hero=cv.parentElement,W,H,burbujas=[];
+  function size(){W=cv.width=hero.clientWidth;H=cv.height=hero.clientHeight;}
+  function nueva(y){return {x:Math.random()*W,y:y!=null?y:H+Math.random()*40,
+    r:1.2+Math.random()*4,v:.25+Math.random()*.7,
+    drift:(Math.random()-.5)*.4,fase:Math.random()*Math.PI*2,
+    op:.06+Math.random()*.18};}
+  function init(){size();burbujas=[];var n=Math.min(46,Math.round(W/22));
+    for(var i=0;i<n;i++)burbujas.push(nueva(Math.random()*H));}
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<burbujas.length;i++){var b=burbujas[i];
+      b.y-=b.v;b.fase+=.02;b.x+=Math.sin(b.fase)*b.drift;
+      var fade=b.y<H*.18?Math.max(0,b.y/(H*.18)):1;
+      ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(224,200,150,'+(b.op*fade)+')';ctx.fill();
+      ctx.beginPath();ctx.arc(b.x-b.r*.3,b.y-b.r*.3,b.r*.35,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+(b.op*fade*1.1)+')';ctx.fill();
+      if(b.y< -10)burbujas[i]=nueva();}
+    requestAnimationFrame(frame);
+  }
+  init();frame();
+  var t;window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(init,200);});
+})();
 (function(){
   var els=[].slice.call(document.querySelectorAll('.reveal'));
   function show(el){el.classList.add('in');}
